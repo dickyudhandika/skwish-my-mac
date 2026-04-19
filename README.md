@@ -1,6 +1,6 @@
-# MiniGuard
+# CleanLocal
 
-MiniGuard is a lightweight macOS menu bar app to monitor system health and clean common junk safely.
+CleanLocal is a lightweight macOS menu bar app to monitor system health and clean common junk safely.
 
 ## What it does
 
@@ -18,7 +18,7 @@ MiniGuard is a lightweight macOS menu bar app to monitor system health and clean
   - quick actions like `Kill High CPU` and memory purge
 - First-run onboarding + quick walkthrough
 - GitHub release update check
-  - checks latest release from `dickyudhandika/MiniGuard`
+  - checks latest release from `dickyudhandika/CleanLocal`
   - compares current app version vs latest tag
   - shows `Update vX` button that opens release page
 
@@ -31,17 +31,17 @@ MiniGuard is a lightweight macOS menu bar app to monitor system health and clean
 ## Run locally
 
 ```bash
-cd ~/Documents/MiniGuard
+cd ~/Documents/CleanLocal
 swift build
 swift run
 ```
 
 ## Build distributable .app bundle
 
-MiniGuard is a SwiftPM executable target, so `swift build` does not auto-generate a `.app` bundle. Use this:
+CleanLocal is a SwiftPM app project. Current executable target name is still `MiniGuard`, so `swift build` does not auto-generate a `.app` bundle. Use this:
 
 ```bash
-cd ~/Documents/MiniGuard
+cd ~/Documents/CleanLocal
 swift build -c release
 
 APP_NAME="MiniGuard"
@@ -89,7 +89,7 @@ Output:
 ### Publish to GitHub Releases
 
 ```bash
-cd ~/Documents/MiniGuard
+cd ~/Documents/CleanLocal
 
 # one-time auth (if not already logged in)
 gh auth login -w -s repo
@@ -104,16 +104,16 @@ git push origin "$VERSION"
 
 # create release and upload binary zip
 gh release create "$VERSION" "$ZIP" \
-  --repo dickyudhandika/MiniGuard \
-  --title "MiniGuard ${VERSION}" \
-  --notes "macOS build for MiniGuard. Download the zip, extract, and move MiniGuard.app to /Applications."
+  --repo dickyudhandika/CleanLocal \
+  --title "CleanLocal ${VERSION}" \
+  --notes "macOS build for CleanLocal. Download the zip, extract, and move MiniGuard.app to /Applications."
 ```
 
 If you need to replace a bad asset:
 
 ```bash
-gh release delete-asset v0.1.0 MiniGuard-macOS-v0.1.0.zip -R dickyudhandika/MiniGuard -y
-gh release upload v0.1.0 dist/MiniGuard-macOS-v0.1.0.zip -R dickyudhandika/MiniGuard --clobber
+gh release delete-asset v0.1.0 MiniGuard-macOS-v0.1.0.zip -R dickyudhandika/CleanLocal -y
+gh release upload v0.1.0 dist/MiniGuard-macOS-v0.1.0.zip -R dickyudhandika/CleanLocal --clobber
 ```
 
 ## Project structure
@@ -123,9 +123,9 @@ gh release upload v0.1.0 dist/MiniGuard-macOS-v0.1.0.zip -R dickyudhandika/MiniG
 
 ## Update feature details
 
-MiniGuard checks:
+CleanLocal checks:
 
-`https://api.github.com/repos/dickyudhandika/MiniGuard/releases/latest`
+`https://api.github.com/repos/dickyudhandika/CleanLocal/releases/latest`
 
 Current behavior:
 
@@ -150,7 +150,7 @@ defaults delete miniguard miniguard.hasSeenOnboarding
 - If multiple app instances are running from repeated `swift run`:
 
 ```bash
-pkill -f '/Users/thenom4design/Documents/MiniGuard/.build/arm64-apple-macosx/debug/MiniGuard'
+pkill -f '/Users/thenom4design/Documents/CleanLocal/.build/arm64-apple-macosx/debug/MiniGuard'
 ```
 
 ## Safety notes
