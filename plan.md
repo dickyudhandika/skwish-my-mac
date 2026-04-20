@@ -1,7 +1,7 @@
-# CleanLocal — Smart Cleanup Feature
+# skwish-my-mac — Smart Cleanup Feature
 
 ## The Pitch
-CleanLocal becomes the "you probably don't need that anymore" app. It watches what you don't use, finds junk you forgot about, and cleans it — all from your menu bar.
+skwish-my-mac becomes the "you probably don't need that anymore" app. It watches what you don't use, finds junk you forgot about, and cleans it — all from your menu bar.
 
 ---
 
@@ -15,7 +15,7 @@ Scan apps you haven't opened in a week (or more). Show them. Let you decide.
 - Shows: app name, size, last opened date
 - Sorted by "least recently used" first
 - Default filter: apps not opened in 7+ days
-- User picks what to trash → CleanLocal handles everything
+- User picks what to trash → skwish-my-mac handles everything
 
 ### UI
 - Section: **"Apps"**
@@ -165,7 +165,7 @@ Let users mark apps as "never suggest removing." Stored in a local JSON config.
 
 ```json
 {
-  "protectedApps": ["Bitdefender", "CleanLocal", "Raycast"],
+  "protectedApps": ["Bitdefender", "SkwishMyMac", "Raycast"],
   "cleanupPreferences": {
     "autoCleanCaches": false,
     "downloadAgeThreshold": 14,
@@ -188,7 +188,7 @@ Let users mark apps as "never suggest removing." Stored in a local JSON config.
 - All destructive ops: `mv ~/.Trash/` (never `rm -rf`)
 - Everything async via `Process()` (existing pattern)
 - Popover stays 320px wide, scrollable
-- Local config at `~/.cleanlocal/config.json` for preferences + whitelist
+- Local config at `~/.skwishmymac/config.json` for preferences + whitelist
 - No telemetry, no network calls — everything stays local
 
 ## Key Design Decisions
@@ -203,22 +203,22 @@ Let users mark apps as "never suggest removing." Stored in a local JSON config.
 ## Activity Log
 
 ### 2026-04-20 (WIB)
-- Rebranded project from MiniGuard to CleanLocal (local folder + GitHub repo)
-- Renamed GitHub repo to `dickyudhandika/CleanLocal` and confirmed it is public
-- Updated local remote URL to `https://github.com/dickyudhandika/CleanLocal.git`
-- Updated README for CleanLocal naming, paths, release commands, and updater endpoint
+- Rebranded project from MiniGuard to skwish-my-mac (local folder + GitHub repo)
+- Renamed GitHub repo to `dickyudhandika/skwish-my-mac` and confirmed it is public
+- Updated local remote URL to `https://github.com/dickyudhandika/skwish-my-mac.git`
+- Updated README for skwish-my-mac naming, paths, release commands, and updater endpoint
 - Full codebase rename sweep completed:
-  - `Package.swift` package/product/target renamed to `CleanLocal`
-  - `Sources/MiniGuard.swift` -> `Sources/CleanLocal.swift`
-  - `Tests/MiniGuardTests/...` -> `Tests/CleanLocalTests/...`
-  - internal app types/labels (`MiniGuardApp`, tabs, UI strings) renamed to CleanLocal
-  - config/storage prefixes changed from `miniguard` to `cleanlocal`
-  - updater repo switched to `dickyudhandika/CleanLocal`
-- Updated docs and marketing files (`README.md`, `docs/index.html`, `plan.md`) to CleanLocal branding
+  - `Package.swift` package/product/target renamed to `skwish-my-mac`
+  - `Sources/MiniGuard.swift` -> `Sources/skwish-my-mac.swift`
+  - `Tests/MiniGuardTests/...` -> `Tests/skwish-my-macTests/...`
+  - internal app types/labels (`MiniGuardApp`, tabs, UI strings) renamed to skwish-my-mac
+  - config/storage prefixes changed from `miniguard` to `skwishmymac`
+  - updater repo switched to `dickyudhandika/skwish-my-mac`
+- Updated docs and marketing files (`README.md`, `docs/index.html`, `plan.md`) to skwish-my-mac branding
 - Rebuilt app after rename and fixed stale module cache issue via reset/clean rebuild
 - Built distributable app bundle locally:
-  - `dist/CleanLocal.app`
-  - `dist/CleanLocal-macOS-v0.1.0.zip`
+  - `dist/skwish-my-mac.app`
+  - `dist/skwish-my-mac-macOS-v0.1.0.zip`
 - Changes pushed to GitHub (`main`) including rebrand commit (`e489833`)
 - Implemented Quick Clean v2 phased flow for real users + dev-aware cleanup:
   - Phase 1: public-safe auto cleanup candidates
@@ -235,8 +235,8 @@ Let users mark apps as "never suggest removing." Stored in a local JSON config.
 - Local commit created for phased Quick Clean:
   - `f686b1b` — `feat: implement phased quick clean with safe public + dev-aware flow`
 - Rebuilt local dist artifacts for manual testing before push:
-  - `dist/CleanLocal.app` (~976K)
-  - `dist/CleanLocal-macOS-v0.1.0.zip` (~256K)
+  - `dist/skwish-my-mac.app` (~976K)
+  - `dist/skwish-my-mac-macOS-v0.1.0.zip` (~256K)
 - Planned next updater improvement before coding:
   - show a clearer in-app `new update available` state
   - show current version vs latest version
@@ -254,11 +254,18 @@ Let users mark apps as "never suggest removing." Stored in a local JSON config.
   - `swift test` ✅ (7 tests passing)
   - `swift build` ✅
 - Rebuilt dist artifacts after updater UI implementation:
-  - `dist/CleanLocal.app` (~1.0M)
-  - `dist/CleanLocal-macOS-v0.1.0.zip` (~264K)
+  - `dist/skwish-my-mac.app` (~1.0M)
+  - `dist/skwish-my-mac-macOS-v0.1.0.zip` (~264K)
 - Updated README with GitHub-based updater test instructions:
   - documented top update banner behavior
   - added exact release-tag flow to test `Check Updates`
   - clarified that GitHub must have a higher version than the running app
+- Rebranded project end-to-end to `skwish-my-mac`:
+  - GitHub repo renamed to `dickyudhandika/skwish-my-mac`
+  - local folder renamed to `~/Documents/skwish-my-mac`
+  - git remote updated to `https://github.com/dickyudhandika/skwish-my-mac.git`
+  - Swift package/target/test names migrated to `SkwishMyMac`
+  - source/test paths renamed to `Sources/SkwishMyMac.swift` and `Tests/SkwishMyMacTests/...`
+  - docs/README/release/update-check references switched to new brand/repo
 
-Last updated: 2026-04-20 15:01:34 WIB
+Last updated: 2026-04-20 17:27:01 WIB

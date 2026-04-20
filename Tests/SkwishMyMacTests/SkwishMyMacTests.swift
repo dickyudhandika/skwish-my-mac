@@ -1,5 +1,5 @@
 import Testing
-@testable import CleanLocal
+@testable import SkwishMyMac
 
 @Test func quick_clean_phase_order_is_linear() {
     #expect(QuickCleanPolicy.phaseOrder == [.publicSafe, .leftovers, .developer, .riskyReview])

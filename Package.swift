@@ -2,20 +2,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "CleanLocal",
+    name: "SkwishMyMac",
     platforms: [.macOS(.v13)],
     products: [
-        .executable(name: "CleanLocal", targets: ["CleanLocal"])
+        .executable(name: "SkwishMyMac", targets: ["SkwishMyMac"])
     ],
     targets: [
         .executableTarget(
-            name: "CleanLocal",
+            name: "SkwishMyMac",
             path: "Sources"
         ),
         .testTarget(
-            name: "CleanLocalTests",
-            dependencies: ["CleanLocal"],
-            path: "Tests/CleanLocalTests"
+            name: "SkwishMyMacTests",
+            dependencies: ["SkwishMyMac"],
+            path: "Tests/SkwishMyMacTests"
         )
     ]
 )

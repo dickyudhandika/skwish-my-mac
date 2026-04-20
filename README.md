@@ -1,6 +1,6 @@
-# CleanLocal
+# skwish-my-mac
 
-CleanLocal is a lightweight macOS menu bar app to monitor system health and clean common junk safely.
+skwish-my-mac is a lightweight macOS menu bar app to monitor system health and clean common junk safely.
 
 ## What it does
 
@@ -18,7 +18,7 @@ CleanLocal is a lightweight macOS menu bar app to monitor system health and clea
   - quick actions like `Kill High CPU` and memory purge
 - First-run onboarding + quick walkthrough
 - GitHub release update check
-  - checks latest release from `dickyudhandika/CleanLocal`
+  - checks latest release from `dickyudhandika/skwish-my-mac`
   - compares current app version vs latest tag
   - shows `Update vX` button that opens release page
 
@@ -31,20 +31,20 @@ CleanLocal is a lightweight macOS menu bar app to monitor system health and clea
 ## Run locally
 
 ```bash
-cd ~/Documents/CleanLocal
+cd ~/Documents/skwish-my-mac
 swift build
 swift run
 ```
 
 ## Build distributable .app bundle
 
-CleanLocal is a SwiftPM app project. Current executable target name is still `CleanLocal`, so `swift build` does not auto-generate a `.app` bundle. Use this:
+skwish-my-mac is a SwiftPM app project. Current executable target name is `SkwishMyMac`, so `swift build` does not auto-generate a `.app` bundle. Use this:
 
 ```bash
-cd ~/Documents/CleanLocal
+cd ~/Documents/skwish-my-mac
 swift build -c release
 
-APP_NAME="CleanLocal"
+APP_NAME="SkwishMyMac"
 APP_VERSION="0.1.0"
 APP_BUNDLE="dist/${APP_NAME}.app"
 BIN_PATH=".build/arm64-apple-macosx/release/${APP_NAME}"
@@ -60,17 +60,17 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<'PLIST'
 <plist version="1.0">
 <dict>
   <key>CFBundleName</key>
-  <string>CleanLocal</string>
+  <string>skwish-my-mac</string>
   <key>CFBundleDisplayName</key>
-  <string>CleanLocal</string>
+  <string>skwish-my-mac</string>
   <key>CFBundleIdentifier</key>
-  <string>com.dickyudhandika.cleanlocal</string>
+  <string>com.dickyudhandika.skwishmymac</string>
   <key>CFBundleVersion</key>
   <string>0.1.0</string>
   <key>CFBundleShortVersionString</key>
   <string>0.1.0</string>
   <key>CFBundleExecutable</key>
-  <string>CleanLocal</string>
+  <string>skwish-my-mac</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>LSMinimumSystemVersion</key>
@@ -83,20 +83,20 @@ ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "dist/${APP_NAME}-macOS-v
 ```
 
 Output:
-- `dist/CleanLocal.app`
-- `dist/CleanLocal-macOS-v0.1.0.zip`
+- `dist/SkwishMyMac.app`
+- `dist/skwish-my-mac-macOS-v0.1.0.zip`
 
 ### Publish to GitHub Releases
 
 ```bash
-cd ~/Documents/CleanLocal
+cd ~/Documents/skwish-my-mac
 
 # one-time auth (if not already logged in)
 gh auth login -w -s repo
 gh auth status
 
 VERSION="v0.1.0"
-ZIP="dist/CleanLocal-macOS-${VERSION}.zip"
+ZIP="dist/skwish-my-mac-macOS-${VERSION}.zip"
 
 # tag + push
 git tag "$VERSION"
@@ -104,28 +104,28 @@ git push origin "$VERSION"
 
 # create release and upload binary zip
 gh release create "$VERSION" "$ZIP" \
-  --repo dickyudhandika/CleanLocal \
-  --title "CleanLocal ${VERSION}" \
-  --notes "macOS build for CleanLocal. Download the zip, extract, and move CleanLocal.app to /Applications."
+  --repo dickyudhandika/skwish-my-mac \
+  --title "skwish-my-mac ${VERSION}" \
+  --notes "macOS build for skwish-my-mac. Download the zip, extract, and move SkwishMyMac.app to /Applications."
 ```
 
 If you need to replace a bad asset:
 
 ```bash
-gh release delete-asset v0.1.0 CleanLocal-macOS-v0.1.0.zip -R dickyudhandika/CleanLocal -y
-gh release upload v0.1.0 dist/CleanLocal-macOS-v0.1.0.zip -R dickyudhandika/CleanLocal --clobber
+gh release delete-asset v0.1.0 skwish-my-mac-macOS-v0.1.0.zip -R dickyudhandika/skwish-my-mac -y
+gh release upload v0.1.0 dist/skwish-my-mac-macOS-v0.1.0.zip -R dickyudhandika/skwish-my-mac --clobber
 ```
 
 ## Project structure
 
 - `Package.swift` — Swift Package definition
-- `Sources/CleanLocal.swift` — main app code (status item, UI, monitor, cleanup, updater)
+- `Sources/SkwishMyMac.swift` — main app code (status item, UI, monitor, cleanup, updater)
 
 ## Update feature details
 
-CleanLocal checks:
+skwish-my-mac checks:
 
-`https://api.github.com/repos/dickyudhandika/CleanLocal/releases/latest`
+`https://api.github.com/repos/dickyudhandika/skwish-my-mac/releases/latest`
 
 Current behavior:
 
@@ -145,7 +145,7 @@ Fastest way:
 1. Keep your local app on an older version (example: `0.1.0`).
 2. Create a newer GitHub release tag (example: `v0.1.1`).
 3. Upload any zip asset to that release.
-4. Open CleanLocal and click `Check Updates`.
+4. Open skwish-my-mac and click `Check Updates`.
 5. You should see the update banner at the top with:
    - current version
    - latest version
@@ -156,16 +156,16 @@ Fastest way:
 Example release test flow:
 
 ```bash
-cd ~/Documents/CleanLocal
+cd ~/Documents/skwish-my-mac
 VERSION="v0.1.1"
-ZIP="dist/CleanLocal-macOS-${VERSION}.zip"
+ZIP="dist/skwish-my-mac-macOS-${VERSION}.zip"
 
 git tag "$VERSION"
 git push origin "$VERSION"
 
 gh release create "$VERSION" "$ZIP" \
-  --repo dickyudhandika/CleanLocal \
-  --title "CleanLocal ${VERSION}" \
+  --repo dickyudhandika/skwish-my-mac \
+  --title "skwish-my-mac ${VERSION}" \
   --notes "Test release for updater UI."
 ```
 
@@ -177,7 +177,7 @@ Important:
 ## Onboarding reset (for testing)
 
 ```bash
-defaults delete cleanlocal cleanlocal.hasSeenOnboarding
+defaults delete skwishmymac skwishmymac.hasSeenOnboarding
 ```
 
 ## Troubleshooting
@@ -188,7 +188,7 @@ defaults delete cleanlocal cleanlocal.hasSeenOnboarding
 - If multiple app instances are running from repeated `swift run`:
 
 ```bash
-pkill -f '/Users/thenom4design/Documents/CleanLocal/.build/arm64-apple-macosx/debug/CleanLocal'
+pkill -f '/Users/thenom4design/Documents/skwish-my-mac/.build/arm64-apple-macosx/debug/SkwishMyMac'
 ```
 
 ## Safety notes

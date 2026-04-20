@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 @main
-struct CleanLocalApp: App {
+struct SkwishMyMacApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
@@ -20,7 +20,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 // MARK: - Models
-enum CleanLocalTab: String, CaseIterable, Identifiable {
+enum SkwishMyMacTab: String, CaseIterable, Identifiable {
     case monitor = "Monitor"
     case apps = "Apps"
     case cleanup = "Cleanup"
@@ -332,7 +332,7 @@ class SystemMonitor: ObservableObject {
     @Published var lastQuickCleanReclaimedGB: Double = 0
     @Published var quickCleanSuggestionCount: Int = 0
 
-    @Published var selectedTab: CleanLocalTab = .monitor
+    @Published var selectedTab: SkwishMyMacTab = .monitor
 
     // Apps tab
     @Published var installedApps: [InstalledApp] = []
@@ -360,7 +360,7 @@ class SystemMonitor: ObservableObject {
     let currentInstalledVersion: String
 
     // GitHub repo for releases: owner/repo
-    private let updateRepo = "dickyudhandika/CleanLocal"
+    private let updateRepo = "dickyudhandika/skwish-my-mac"
 
     init() {
         self.currentInstalledVersion = Self.detectCurrentInstalledVersion()
@@ -688,15 +688,15 @@ class SystemMonitor: ObservableObject {
     }
 
     private func scanSafeTrashArtifacts() -> [QuickCleanItem] {
-        let kbRaw = shell("du -sk ~/.Trash/cleanlocal-* 2>/dev/null | awk '{total += $1} END {print total+0}'")
+        let kbRaw = shell("du -sk ~/.Trash/skwishmymac-* 2>/dev/null | awk '{total += $1} END {print total+0}'")
         let kb = Double(kbRaw.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
         guard kb > 0 else { return [] }
 
         return [
             QuickCleanItem(
                 phase: .publicSafe,
-                title: "Old CleanLocal artifacts in Trash",
-                pathOrCommand: "find ~/.Trash -maxdepth 1 -name 'cleanlocal-*' -exec rm -rf {} + 2>/dev/null",
+                title: "Old skwish-my-mac artifacts in Trash",
+                pathOrCommand: "find ~/.Trash -maxdepth 1 -name 'skwishmymac-*' -exec rm -rf {} + 2>/dev/null",
                 estimatedGB: kb / 1_048_576,
                 risk: .auto,
                 reason: "Cleanup previous app-created trash artifacts only",
@@ -905,7 +905,7 @@ class SystemMonitor: ObservableObject {
         guard FileManager.default.fileExists(atPath: source) else { return true }
 
         let base = (source as NSString).lastPathComponent
-        let target = "\(NSHomeDirectory())/.Trash/cleanlocal-\(slug(base))-\(Int(Date().timeIntervalSince1970))"
+        let target = "\(NSHomeDirectory())/.Trash/skwishmymac-\(slug(base))-\(Int(Date().timeIntervalSince1970))"
         let result = runShell("mv \(sh(source)) \(sh(target)) 2>/dev/null")
         return result.status == 0
     }
@@ -1017,7 +1017,7 @@ class SystemMonitor: ObservableObject {
                 _ = self.shell("killall \(self.sh(app.name)) 2>/dev/null")
                 _ = self.shell("osascript -e 'tell application \"System Events\" to delete login item \"\(self.escapeAppleScript(app.name))\"' 2>/dev/null")
 
-                let appTarget = "~/.Trash/cleanlocal-\(self.slug(app.name))-app-$(date +%s).app"
+                let appTarget = "~/.Trash/skwishmymac-\(self.slug(app.name))-app-$(date +%s).app"
                 let moveOutput = self.shell("mv \(self.sh(app.path)) \(appTarget) 2>&1")
 
                 if moveOutput.lowercased().contains("operation not permitted") || moveOutput.lowercased().contains("permission denied") || app.needsSudo {
@@ -1035,7 +1035,7 @@ class SystemMonitor: ObservableObject {
                 ]
 
                 for pattern in leftovers {
-                    _ = self.shell("for p in \(pattern); do [ -e \"$p\" ] && mv \"$p\" ~/.Trash/cleanlocal-\(self.slug(app.name))-$(basename \"$p\")-$(date +%s) 2>/dev/null; done")
+                    _ = self.shell("for p in \(pattern); do [ -e \"$p\" ] && mv \"$p\" ~/.Trash/skwishmymac-\(self.slug(app.name))-$(basename \"$p\")-$(date +%s) 2>/dev/null; done")
                 }
 
                 logs.append(String(format: "estimated reclaimed: %.2f GB", app.sizeGB))
@@ -1093,7 +1093,7 @@ class SystemMonitor: ObservableObject {
             let command = parts[10...].joined(separator: " ")
 
             guard cpu >= 20 else { continue }
-            guard !command.contains("CleanLocal") else { continue }
+            guard !command.contains("SkwishMyMac") else { continue }
             guard !command.contains("kernel_task") else { continue }
 
             items.append(
@@ -1129,7 +1129,7 @@ class SystemMonitor: ObservableObject {
             let command = parts[10...].joined(separator: " ")
 
             guard memPercent >= 2 else { continue }
-            guard !command.contains("CleanLocal") else { continue }
+            guard !command.contains("SkwishMyMac") else { continue }
 
             items.append(
                 ProcessItem(
@@ -1216,10 +1216,10 @@ class SystemMonitor: ObservableObject {
 
             for item in selected {
                 let basename = (item.path as NSString).lastPathComponent
-                let target = "~/.Trash/cleanlocal-\(self.slug(basename))-$(date +%s)"
+                let target = "~/.Trash/skwishmymac-\(self.slug(basename))-$(date +%s)"
 
                 if item.path == "~/.Trash" {
-                    let out = self.shell("find ~/.Trash -mindepth 1 -maxdepth 1 -exec mv {} ~/.Trash/cleanlocal-trash-clean-$(date +%s)-$(basename {}) \\; 2>/dev/null")
+                    let out = self.shell("find ~/.Trash -mindepth 1 -maxdepth 1 -exec mv {} ~/.Trash/skwishmymac-trash-clean-$(date +%s)-$(basename {}) \\; 2>/dev/null")
                     logs.append(out.isEmpty ? "cleaned Trash items" : out)
                 } else {
                     let out = self.shell("mv \(self.sh(item.path)) \(target) 2>&1")
@@ -1284,7 +1284,7 @@ class SystemMonitor: ObservableObject {
         }
 
         var request = URLRequest(url: url)
-        request.setValue("CleanLocal", forHTTPHeaderField: "User-Agent")
+        request.setValue("SkwishMyMac", forHTTPHeaderField: "User-Agent")
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
 
         URLSession.shared.dataTask(with: request) { data, response, error in
@@ -1457,7 +1457,7 @@ class SystemMonitor: ObservableObject {
 // MARK: - Popover View
 struct PopoverView: View {
     @ObservedObject var monitor: SystemMonitor
-    @AppStorage("cleanlocal.hasSeenOnboarding") private var hasSeenOnboarding: Bool = false
+    @AppStorage("skwishmymac.hasSeenOnboarding") private var hasSeenOnboarding: Bool = false
     @State private var showOnboarding: Bool = false
     @State private var isWalkthroughRunning: Bool = false
     @State private var walkthroughMessage: String? = nil
@@ -1468,7 +1468,7 @@ struct PopoverView: View {
             Divider()
 
             Picker("Tab", selection: $monitor.selectedTab) {
-                ForEach(CleanLocalTab.allCases) { tab in
+                ForEach(SkwishMyMacTab.allCases) { tab in
                     Text(tab.rawValue).tag(tab)
                 }
             }
@@ -1530,7 +1530,7 @@ struct PopoverView: View {
 
     private var header: some View {
         HStack {
-            Text("CleanLocal")
+            Text("skwish-my-mac")
                 .font(.system(size: 16, weight: .bold))
             Spacer()
             Button(action: { showOnboarding = true }) {
@@ -1538,7 +1538,7 @@ struct PopoverView: View {
                     .font(.system(size: 14, weight: .semibold))
             }
             .buttonStyle(.plain)
-            .help("What can CleanLocal do?")
+            .help("What can skwish-my-mac do?")
             healthBadge
         }
         .padding(.horizontal, 16)
@@ -1554,7 +1554,7 @@ struct PopoverView: View {
         }
     }
 
-    private func walkthroughChip(_ tab: CleanLocalTab, label: String) -> some View {
+    private func walkthroughChip(_ tab: SkwishMyMacTab, label: String) -> some View {
         let isActive = monitor.selectedTab == tab
 
         return Text(label)
@@ -1571,7 +1571,7 @@ struct PopoverView: View {
 
     private var onboardingSheet: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Welcome to CleanLocal")
+            Text("Welcome to skwish-my-mac")
                 .font(.system(size: 18, weight: .bold))
 
             Text("Quick way to keep your Mac fast without hunting settings.")
