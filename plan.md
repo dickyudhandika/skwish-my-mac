@@ -329,5 +329,12 @@ When skwish-my-mac launches, it should behave like a real background utility:
   - built `dist/skwish-my-mac-macOS-v0.1.2.zip`
   - built `dist/skwish-my-mac-macOS-v0.1.2.dmg`
   - bundle version set to `0.1.2` with `LSUIElement=true`
+- Published menu-bar-only release to GitHub:
+  - commit pushed: `39b1d00` (`feat: run as menu-bar-only app and hide dock icon`)
+  - tag: `v0.1.2`
+  - assets:
+    - `skwish-my-mac-macOS-v0.1.2.dmg`
+    - `skwish-my-mac-macOS-v0.1.2.zip`
+  - URL: `https://github.com/dickyudhandika/skwish-my-mac/releases/tag/v0.1.2`
 
-Last updated: 2026-04-20 18:33:52 WIB
+Last updated: 2026-04-20 18:34:40 WIB
