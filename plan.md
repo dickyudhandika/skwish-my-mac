@@ -220,5 +220,41 @@ Let users mark apps as "never suggest removing." Stored in a local JSON config.
   - `dist/CleanLocal.app`
   - `dist/CleanLocal-macOS-v0.1.0.zip`
 - Changes pushed to GitHub (`main`) including rebrand commit (`e489833`)
+- Implemented Quick Clean v2 phased flow for real users + dev-aware cleanup:
+  - Phase 1: public-safe auto cleanup candidates
+  - Phase 2: app leftover detection (review-first)
+  - Phase 3: dev cleanup only when signals exist (`npm`, `pip`, `homebrew`, dev artifacts)
+  - Phase 4: risky actions as suggestions only (no auto execute)
+- Removed personalized/risky Quick Clean defaults:
+  - Removed `~/.hermes/*` cleanup from Quick Clean
+  - Removed blanket `python3.11` kill from Quick Clean
+  - Removed DNS flush from Quick Clean
+- Added Quick Clean policy + tests and verified green:
+  - `swift build` ✅
+  - `swift test` ✅ (4 tests passing)
+- Local commit created for phased Quick Clean:
+  - `f686b1b` — `feat: implement phased quick clean with safe public + dev-aware flow`
+- Rebuilt local dist artifacts for manual testing before push:
+  - `dist/CleanLocal.app` (~976K)
+  - `dist/CleanLocal-macOS-v0.1.0.zip` (~256K)
+- Planned next updater improvement before coding:
+  - show a clearer in-app `new update available` state
+  - show current version vs latest version
+  - keep updates optional/manual so user can stay on current version
+  - add visible update banner/card instead of relying only on footer text
+  - plan saved at `.hermes/plans/2026-04-20_124157-update-banner-and-optional-manual-update.md`
+- Implemented optional/manual updater UX:
+  - added structured `UpdateState` + `UpdatePolicy`
+  - update check now distinguishes `checking`, `up to date`, `update available`, and `error`
+  - visible update banner now shows `current` vs `latest` version
+  - user can choose `Update Now`, `Later`, or `Check Again`
+  - keeping old version is explicitly supported; no forced update flow
+  - footer kept as secondary status/check area
+- Added updater tests and verified green:
+  - `swift test` ✅ (7 tests passing)
+  - `swift build` ✅
+- Rebuilt dist artifacts after updater UI implementation:
+  - `dist/CleanLocal.app` (~1.0M)
+  - `dist/CleanLocal-macOS-v0.1.0.zip` (~264K)
 
-Last updated: 2026-04-20 09:18:27 WIB
+Last updated: 2026-04-20 14:55:10 WIB

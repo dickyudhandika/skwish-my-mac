@@ -66,10 +66,87 @@ struct CleanableItem: Identifiable {
 struct GitHubRelease: Decodable {
     let tagName: String
     let htmlURL: String
+    let body: String?
 
     enum CodingKeys: String, CodingKey {
         case tagName = "tag_name"
         case htmlURL = "html_url"
+        case body
+    }
+}
+
+enum UpdateState: Equatable {
+    case idle
+    case checking
+    case upToDate(current: String)
+    case updateAvailable(current: String, latest: String)
+    case error(message: String)
+}
+
+struct UpdatePolicy {
+    static func sanitizeVersion(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let withoutV = trimmed.replacingOccurrences(of: "^[vV]\\s*", with: "", options: .regularExpression)
+        return withoutV
+            .split(separator: "-", maxSplits: 1, omittingEmptySubsequences: true)
+            .first
+            .map(String.init) ?? withoutV
+    }
+
+    static func evaluate(current: String, latest: String, dismissedVersion: String?) -> UpdateState {
+        let sanitizedCurrent = sanitizeVersion(current)
+        let sanitizedLatest = sanitizeVersion(latest)
+        let comparison = compareVersion(sanitizedLatest, sanitizedCurrent)
+
+        if comparison == .orderedDescending {
+            return .updateAvailable(current: sanitizedCurrent, latest: sanitizedLatest)
+        }
+
+        return .upToDate(current: sanitizedCurrent)
+    }
+
+    static func shouldShowBanner(for state: UpdateState, dismissedVersion: String?) -> Bool {
+        guard case let .updateAvailable(_, latest) = state else { return false }
+        guard let dismissedVersion else { return true }
+        return sanitizeVersion(dismissedVersion) != sanitizeVersion(latest)
+    }
+
+    static func statusMessage(for state: UpdateState) -> String {
+        switch state {
+        case .idle:
+            return ""
+        case .checking:
+            return "Checking GitHub releases..."
+        case .upToDate(let current):
+            return "You’re up to date (v\(current))."
+        case .updateAvailable(_, let latest):
+            return "New update available: v\(latest)"
+        case .error(let message):
+            return message
+        }
+    }
+
+    static func compareVersion(_ lhs: String, _ rhs: String) -> ComparisonResult {
+        let l = versionComponents(from: lhs)
+        let r = versionComponents(from: rhs)
+        let count = max(l.count, r.count)
+
+        for idx in 0..<count {
+            let lv = idx < l.count ? l[idx] : 0
+            let rv = idx < r.count ? r[idx] : 0
+            if lv > rv { return .orderedDescending }
+            if lv < rv { return .orderedAscending }
+        }
+        return .orderedSame
+    }
+
+    private static func versionComponents(from version: String) -> [Int] {
+        let base = sanitizeVersion(version)
+        let parts = base.split(separator: ".", omittingEmptySubsequences: false).map { part in
+            let digits = String(part.prefix { $0.isNumber })
+            return Int(digits) ?? 0
+        }
+        return parts.isEmpty ? [0] : parts
     }
 }
 
@@ -273,13 +350,21 @@ class SystemMonitor: ObservableObject {
 
     // Updates
     @Published var isCheckingUpdates: Bool = false
+    @Published var updateState: UpdateState = .idle
     @Published var updateStatusMessage: String = ""
     @Published var updateAvailableVersion: String? = nil
     @Published var latestReleaseURL: String? = nil
+    @Published var latestReleaseNotes: String? = nil
     @Published var lastUpdateCheckedAt: Date? = nil
+    @Published var dismissedUpdateVersion: String? = nil
+    let currentInstalledVersion: String
 
     // GitHub repo for releases: owner/repo
     private let updateRepo = "dickyudhandika/CleanLocal"
+
+    init() {
+        self.currentInstalledVersion = Self.detectCurrentInstalledVersion()
+    }
 
     func refresh() {
         updateCPU()
@@ -1181,18 +1266,20 @@ class SystemMonitor: ObservableObject {
         guard !isCheckingUpdates else { return }
 
         guard updateRepo.contains("/") else {
-            updateStatusMessage = "Invalid update repo format. Use owner/repo."
+            applyUpdateState(.error(message: "Invalid update repo format. Use owner/repo."))
             return
         }
 
         isCheckingUpdates = true
         updateAvailableVersion = nil
-        updateStatusMessage = "Checking GitHub releases..."
+        latestReleaseURL = nil
+        latestReleaseNotes = nil
+        updateState = .checking
+        updateStatusMessage = UpdatePolicy.statusMessage(for: .checking)
 
-        let current = currentVersionString()
         guard let url = URL(string: "https://api.github.com/repos/\(updateRepo)/releases/latest") else {
             isCheckingUpdates = false
-            updateStatusMessage = "Invalid release URL."
+            applyUpdateState(.error(message: "Invalid release URL."))
             return
         }
 
@@ -1210,46 +1297,42 @@ class SystemMonitor: ObservableObject {
 
             if let error {
                 DispatchQueue.main.async {
-                    self.latestReleaseURL = nil
-                    self.updateStatusMessage = "Update check failed: \(error.localizedDescription)"
+                    self.applyUpdateState(.error(message: "Update check failed: \(error.localizedDescription)"))
                 }
                 return
             }
 
             guard let http = response as? HTTPURLResponse else {
                 DispatchQueue.main.async {
-                    self.latestReleaseURL = nil
-                    self.updateStatusMessage = "Update check failed: no response"
+                    self.applyUpdateState(.error(message: "Update check failed: no response"))
                 }
                 return
             }
 
             guard http.statusCode == 200, let data else {
                 DispatchQueue.main.async {
-                    self.latestReleaseURL = nil
-                    self.updateStatusMessage = "No release found (HTTP \(http.statusCode))."
+                    self.applyUpdateState(.error(message: "No release found (HTTP \(http.statusCode))."))
                 }
                 return
             }
 
             do {
                 let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
-                let latest = self.sanitizeVersion(release.tagName)
-                let comparison = self.compareVersion(latest, current)
+                let latest = UpdatePolicy.sanitizeVersion(release.tagName)
+                let state = UpdatePolicy.evaluate(
+                    current: self.currentInstalledVersion,
+                    latest: latest,
+                    dismissedVersion: self.dismissedUpdateVersion
+                )
 
                 DispatchQueue.main.async {
                     self.latestReleaseURL = release.htmlURL
-                    if comparison == .orderedDescending {
-                        self.updateAvailableVersion = latest
-                        self.updateStatusMessage = "Update available: v\(latest)"
-                    } else {
-                        self.updateStatusMessage = "You’re up to date (v\(current))."
-                    }
+                    self.latestReleaseNotes = release.body
+                    self.applyUpdateState(state)
                 }
             } catch {
                 DispatchQueue.main.async {
-                    self.latestReleaseURL = nil
-                    self.updateStatusMessage = "Failed to parse GitHub release."
+                    self.applyUpdateState(.error(message: "Failed to parse GitHub release."))
                 }
             }
         }.resume()
@@ -1260,45 +1343,49 @@ class SystemMonitor: ObservableObject {
         NSWorkspace.shared.open(url)
     }
 
-    private func currentVersionString() -> String {
+    func dismissUpdateBanner() {
+        guard let version = updateAvailableVersion else { return }
+        dismissedUpdateVersion = version
+    }
+
+    var shouldShowUpdateBanner: Bool {
+        UpdatePolicy.shouldShowBanner(for: updateState, dismissedVersion: dismissedUpdateVersion)
+    }
+
+    private func applyUpdateState(_ state: UpdateState) {
+        updateState = state
+        updateStatusMessage = UpdatePolicy.statusMessage(for: state)
+
+        switch state {
+        case .updateAvailable(_, let latest):
+            updateAvailableVersion = latest
+        case .idle, .checking, .upToDate:
+            updateAvailableVersion = nil
+        case .error:
+            updateAvailableVersion = nil
+            latestReleaseURL = nil
+            latestReleaseNotes = nil
+        }
+    }
+
+    private static func detectCurrentInstalledVersion() -> String {
         let bundleVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
         if let bundleVersion, !bundleVersion.isEmpty {
-            return sanitizeVersion(bundleVersion)
+            return UpdatePolicy.sanitizeVersion(bundleVersion)
         }
         return "0.1.0"
     }
 
+    private func currentVersionString() -> String {
+        currentInstalledVersion
+    }
+
     private func sanitizeVersion(_ text: String) -> String {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.replacingOccurrences(of: "^[vV]\\s*", with: "", options: .regularExpression)
+        UpdatePolicy.sanitizeVersion(text)
     }
 
     private func compareVersion(_ lhs: String, _ rhs: String) -> ComparisonResult {
-        let l = versionComponents(from: lhs)
-        let r = versionComponents(from: rhs)
-        let count = max(l.count, r.count)
-
-        for idx in 0..<count {
-            let lv = idx < l.count ? l[idx] : 0
-            let rv = idx < r.count ? r[idx] : 0
-            if lv > rv { return .orderedDescending }
-            if lv < rv { return .orderedAscending }
-        }
-        return .orderedSame
-    }
-
-    private func versionComponents(from version: String) -> [Int] {
-        let base = sanitizeVersion(version)
-            .split(separator: "-", maxSplits: 1, omittingEmptySubsequences: true)
-            .first
-            .map(String.init) ?? sanitizeVersion(version)
-
-        let parts = base.split(separator: ".", omittingEmptySubsequences: false).map { part in
-            let digits = String(part.prefix { $0.isNumber })
-            return Int(digits) ?? 0
-        }
-
-        return parts.isEmpty ? [0] : parts
+        UpdatePolicy.compareVersion(lhs, rhs)
     }
 
     // MARK: Helpers
@@ -1404,6 +1491,12 @@ struct PopoverView: View {
 
             Divider()
 
+            if monitor.shouldShowUpdateBanner {
+                updateBanner
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+            }
+
             ScrollView {
                 VStack(spacing: 10) {
                     switch monitor.selectedTab {
@@ -1426,7 +1519,7 @@ struct PopoverView: View {
             if !hasSeenOnboarding {
                 showOnboarding = true
             }
-            if monitor.updateStatusMessage.isEmpty {
+            if case .idle = monitor.updateState {
                 monitor.checkForUpdates()
             }
         }
@@ -1876,12 +1969,61 @@ struct PopoverView: View {
         .padding(.vertical, 4)
     }
 
+    private var updateBanner: some View {
+        Group {
+            if case let .updateAvailable(current, latest) = monitor.updateState {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .center) {
+                        Label("new update available", systemImage: "arrow.down.circle.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.green)
+                        Spacer()
+                        Button("Later") {
+                            monitor.dismissUpdateBanner()
+                        }
+                        .font(.system(size: 9, weight: .medium))
+                    }
+
+                    Text("Current: v\(current)  •  Latest: v\(latest)")
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundColor(.primary)
+
+                    Text("You can keep using this version, or update anytime.")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+
+                    HStack(spacing: 8) {
+                        Button("Update Now") {
+                            monitor.openLatestRelease()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+
+                        Button(monitor.isCheckingUpdates ? "Checking…" : "Check Again") {
+                            monitor.checkForUpdates()
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(monitor.isCheckingUpdates)
+                    }
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.green.opacity(0.10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.green.opacity(0.35), lineWidth: 1)
+                )
+                .cornerRadius(10)
+            }
+        }
+    }
+
     private var footer: some View {
         VStack(spacing: 4) {
             if !monitor.updateStatusMessage.isEmpty {
                 Text(monitor.updateStatusMessage)
                     .font(.system(size: 9))
-                    .foregroundColor(monitor.updateAvailableVersion == nil ? .secondary : .green)
+                    .foregroundColor(footerStatusColor)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
@@ -1892,18 +2034,18 @@ struct PopoverView: View {
 
                 Spacer()
 
-                if let version = monitor.updateAvailableVersion {
+                if let version = monitor.updateAvailableVersion, !monitor.shouldShowUpdateBanner {
                     Button("Update v\(version)") {
                         monitor.openLatestRelease()
                     }
                     .font(.system(size: 9, weight: .semibold))
-                } else {
-                    Button(monitor.isCheckingUpdates ? "Checking…" : "Check Updates") {
-                        monitor.checkForUpdates()
-                    }
-                    .font(.system(size: 9))
-                    .disabled(monitor.isCheckingUpdates)
                 }
+
+                Button(monitor.isCheckingUpdates ? "Checking…" : "Check Updates") {
+                    monitor.checkForUpdates()
+                }
+                .font(.system(size: 9))
+                .disabled(monitor.isCheckingUpdates)
 
                 Button("Quit") { NSApplication.shared.terminate(nil) }
                     .font(.system(size: 9))
@@ -1934,6 +2076,17 @@ struct PopoverView: View {
         case 80...100: return .green
         case 50..<80:  return .yellow
         default:       return .red
+        }
+    }
+
+    private var footerStatusColor: Color {
+        switch monitor.updateState {
+        case .updateAvailable:
+            return .green
+        case .error:
+            return .orange
+        default:
+            return .secondary
         }
     }
 

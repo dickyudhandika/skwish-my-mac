@@ -29,3 +29,29 @@ import Testing
     #expect(QuickCleanPolicy.isDeveloperPhaseEnabled(devSignals: []) == false)
     #expect(QuickCleanPolicy.isDeveloperPhaseEnabled(devSignals: ["npm"]))
 }
+
+@Test func prerelease_version_is_sanitized_for_comparison() {
+    #expect(UpdatePolicy.sanitizeVersion("v1.2.3-beta.1") == "1.2.3")
+}
+
+@Test func newer_release_creates_optional_update_banner_state() {
+    let state = UpdatePolicy.evaluate(current: "0.1.0", latest: "0.2.0", dismissedVersion: nil)
+
+    switch state {
+    case .updateAvailable(let current, let latest):
+        #expect(current == "0.1.0")
+        #expect(latest == "0.2.0")
+    default:
+        Issue.record("Expected updateAvailable state")
+    }
+
+    #expect(UpdatePolicy.shouldShowBanner(for: state, dismissedVersion: nil))
+}
+
+@Test func dismissed_version_hides_banner_for_same_release_only() {
+    let sameVersionState = UpdatePolicy.evaluate(current: "0.1.0", latest: "0.2.0", dismissedVersion: "0.2.0")
+    #expect(UpdatePolicy.shouldShowBanner(for: sameVersionState, dismissedVersion: "0.2.0") == false)
+
+    let newerVersionState = UpdatePolicy.evaluate(current: "0.1.0", latest: "0.2.1", dismissedVersion: "0.2.0")
+    #expect(UpdatePolicy.shouldShowBanner(for: newerVersionState, dismissedVersion: "0.2.0"))
+}
